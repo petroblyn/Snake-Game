@@ -41,10 +41,34 @@ velocityX = 0
 velocityY = 0
 game_over = False
 score = 0
+paused = False
+
+def reset_game():
+    """Reset game state to initial values so the game can restart without rerunning the script."""
+    global snake, food, snake_body, velocityX, velocityY, game_over, score
+    snake = Tile(5 * TILE_SIZE, 5 * TILE_SIZE)
+    # place food randomly to avoid immediate collision
+    food = Tile(random.randint(0, COLS - 1) * TILE_SIZE, random.randint(0, ROWS - 1) * TILE_SIZE)
+    snake_body = []
+    velocityX = 0
+    velocityY = 0
+    game_over = False
+    score = 0
 
 def change_direction(event):
-    global velocityX, velocityY, game_over
-    if (game_over):
+    global velocityX, velocityY, game_over, paused
+
+    key = event.keysym.lower()
+
+    # Toggle pause anytime with 'p'
+    if key == 'p':
+        paused = not paused
+        return
+
+    # allow restart when game is over by pressing 'r'
+    if game_over:
+        if key == 'r':
+            reset_game()
         return
 
     if (event.keysym == "Up" and velocityY != 1):
@@ -99,11 +123,16 @@ def move():
 
 
 def draw():
-    global snake, food, snake_body, game_over, score
-    move()
+    global snake, food, snake_body, game_over, score, paused
+
+    # only update game state when not paused and not game over
+    if not paused and not game_over:
+        move()
  
     canvas.delete("all")
 
+    # top score bar
+    canvas.create_rectangle(0, 0, WINDOW_WIDTH, 30, fill="#111111", outline="")
     #draw food
     canvas.create_rectangle(food.x, food.y, food.x + TILE_SIZE, food.y + TILE_SIZE, fill="red")
 
@@ -113,10 +142,17 @@ def draw():
     for tile in snake_body:
         canvas.create_rectangle(tile.x, tile.y, tile.x + TILE_SIZE, tile.y + TILE_SIZE, fill="lime green")
 
-    if (game_over):
-        canvas.create_text(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, text= f"GAME OVER: {score}", fill="white", font=("Arial", 24))
+    if game_over:
+        canvas.create_text(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 20, text=f"GAME OVER: {score}", fill="white", font=("Arial", 24))
+        canvas.create_text(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 20, text="Press R to restart", fill="white", font=("Arial", 14))
     else:
-        canvas.create_text(30, 20, font= "Arial 10", text= f"Score: {score}", fill= "white")
+        # show score in the top-left bar
+        canvas.create_text(60, 15, font=("Arial", 12), text=f"Score: {score}", fill="white")
+        # show pause hint top-right
+        canvas.create_text(WINDOW_WIDTH - 80, 15, font=("Arial", 10), text="P: Pause/Resume", fill="white")
+
+    if paused and not game_over:
+        canvas.create_text(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, text="PAUSED", fill="yellow", font=("Arial", 24))
 
     window.after(100, draw)  #redraw every 100 ms
     
