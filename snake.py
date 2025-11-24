@@ -43,16 +43,16 @@ def change_direction(event):
     global velocityX, velocityY
 
 
-    if (event.keysym == "Up"):
+    if (event.keysym == "Up" and velocityY != 1):
         velocityX = 0
         velocityY = -1
-    elif (event.keysym == "Down"):
+    elif (event.keysym == "Down" and velocityY != -1):
         velocityX = 0
         velocityY = 1
-    elif (event.keysym == "Left"):
+    elif (event.keysym == "Left" and velocityX != 1):
         velocityX = -1
         velocityY = 0
-    elif (event.keysym == "Right"):
+    elif (event.keysym == "Right" and velocityX != -1):
         velocityX = 1
         velocityY = 0
 
@@ -67,12 +67,15 @@ def move():
 def draw():
     global snake
     move()
+ 
+    canvas.delete("all")
+
+    #draw food
+    canvas.create_rectangle(food.x, food.y, food.x + TILE_SIZE, food.y + TILE_SIZE, fill="red")
 
     #draw snake
     canvas.create_rectangle(snake.x, snake.y, snake.x + TILE_SIZE, snake.y + TILE_SIZE, fill="lime green")
 
-    #draw food
-    canvas.create_rectangle(food.x, food.y, food.x + TILE_SIZE, food.y + TILE_SIZE, fill="red")
 
     window.after(100, draw)  #redraw every 100 ms
     
