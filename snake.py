@@ -36,6 +36,7 @@ window.geometry(f"{window_width}x{window_height}+{window_x}+{window_y}")
 #initialize the game
 snake = Tile(5*TILE_SIZE, 5*TILE_SIZE)  #single tile, snake's head
 food = Tile(10*TILE_SIZE, 10*TILE_SIZE)  #single tile, food
+snake_body = [] #multiple snake tiles
 velocityX = 0
 velocityY = 0
 
@@ -59,6 +60,12 @@ def change_direction(event):
 def move():
     global snake
 
+    #collision
+    if (snake.x == food.x and snake.y == food.y):
+        snake_body.append(Tile(food.x, food.y))
+        food.x = random.randint(0, COLS - 1) * TILE_SIZE
+        food.y = random.randint(0, ROWS - 1) * TILE_SIZE
+
     #update snake position
     snake.x += velocityX * TILE_SIZE
     snake.y += velocityY * TILE_SIZE
@@ -75,6 +82,9 @@ def draw():
 
     #draw snake
     canvas.create_rectangle(snake.x, snake.y, snake.x + TILE_SIZE, snake.y + TILE_SIZE, fill="lime green")
+
+    for tile in snake_body:
+        canvas.create_rectangle(tile.x, tile.y, tile.x + TILE_SIZE, tile.y + TILE_SIZE, fill="lime green")
 
 
     window.after(100, draw)  #redraw every 100 ms
