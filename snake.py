@@ -1,5 +1,6 @@
 import tkinter
 import random
+import os
 
 ROWS = 25
 COLS = 25
@@ -22,6 +23,23 @@ canvas = tkinter.Canvas(window, bg = "black", width = WINDOW_WIDTH, height = WIN
 canvas.pack()
 canvas.update()
 
+# High score persistence
+HIGH_SCORE_FILE = os.path.join(os.path.dirname(__file__), "highscore.txt")
+
+def load_high_score():
+    try:
+        with open(HIGH_SCORE_FILE, "r") as f:
+            return int(f.read().strip() or 0)
+    except Exception:
+        return 0
+
+def save_high_score(val):
+    try:
+        with open(HIGH_SCORE_FILE, "w") as f:
+            f.write(str(int(val)))
+    except Exception:
+        pass
+
 #center the window
 window_width = window.winfo_width()
 window_height = window.winfo_height()
@@ -42,10 +60,11 @@ velocityY = 0
 game_over = False
 score = 0
 paused = False
+high_score = load_high_score()
 
 def reset_game():
     """Reset game state to initial values so the game can restart without rerunning the script."""
-    global snake, food, snake_body, velocityX, velocityY, game_over, score
+    global snake, food, snake_body, velocityX, velocityY, game_over, score, restart_btn
     snake = Tile(5 * TILE_SIZE, 5 * TILE_SIZE)
     # place food randomly to avoid immediate collision
     food = Tile(random.randint(0, COLS - 1) * TILE_SIZE, random.randint(0, ROWS - 1) * TILE_SIZE)
@@ -54,6 +73,13 @@ def reset_game():
     velocityY = 0
     game_over = False
     score = 0
+
+    # ensure the restart button is enabled (in case we disabled it elsewhere)
+    try:
+        if restart_btn is not None:
+            restart_btn.config(state="normal")
+    except Exception:
+        pass
 
 def change_direction(event):
     global velocityX, velocityY, game_over, paused
@@ -123,7 +149,7 @@ def move():
 
 
 def draw():
-    global snake, food, snake_body, game_over, score, paused
+    global snake, food, snake_body, game_over, score, paused, high_score
 
     # only update game state when not paused and not game over
     if not paused and not game_over:
@@ -143,11 +169,21 @@ def draw():
         canvas.create_rectangle(tile.x, tile.y, tile.x + TILE_SIZE, tile.y + TILE_SIZE, fill="lime green")
 
     if game_over:
+        # update high score if needed
+        try:
+            if score > high_score:
+                high_score = score
+                save_high_score(high_score)
+        except Exception:
+            pass
+
         canvas.create_text(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 20, text=f"GAME OVER: {score}", fill="white", font=("Arial", 24))
         canvas.create_text(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 20, text="Press R to restart", fill="white", font=("Arial", 14))
     else:
         # show score in the top-left bar
         canvas.create_text(60, 15, font=("Arial", 12), text=f"Score: {score}", fill="white")
+        # show high score in the top-center
+        canvas.create_text(WINDOW_WIDTH // 2, 15, font=("Arial", 12), text=f"High: {high_score}", fill="white")
         # show pause hint top-right
         canvas.create_text(WINDOW_WIDTH - 80, 15, font=("Arial", 10), text="P: Pause/Resume", fill="white")
 
@@ -159,4 +195,14 @@ def draw():
 draw()
 
 window.bind("<KeyRelease>", change_direction)
+
+# add a clickable Restart button in the window (top-right)
+try:
+    restart_btn = tkinter.Button(window, text="Restart", command=reset_game)
+    # place near the top-right; small offset to be visible above the canvas bar
+    # place the restart button below the top info bar so it doesn't overlap the pause hint
+    restart_btn.place(x=WINDOW_WIDTH - 90, y=34, width=80, height=24)
+except Exception:
+    restart_btn = None
+
 window.mainloop()
